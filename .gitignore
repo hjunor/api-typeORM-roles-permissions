@@ -1,0 +1,7 @@
+node_modules
+*.lock
+*lock.json
+.env
+.DS_Store
+.vscode
+.md
