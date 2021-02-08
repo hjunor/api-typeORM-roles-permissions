@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { getCustomRepository } from 'typeorm';
 import Bcrypt from '../helpers/bcrypt';
 import UserRepository from '../repositories/UserRepository';
-import { generateJwt } from '../helpers/jtw';
+import { generateJwt } from '../helpers/jwt';
 import User from '../models/User';
 class sessionController {
   async create(request: Request, response: Response) {

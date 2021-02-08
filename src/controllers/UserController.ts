@@ -4,7 +4,7 @@ import Bcrypt from '../helpers/bcrypt';
 import UserRepository from '../repositories/UserRepository';
 import UserValidator from '../Validator/UserValidator';
 import { userIntercafe } from '../helpers/interfaces';
-import { generateJwt } from '../helpers/jtw';
+import { generateJwt } from '../helpers/jwt';
 import RolesRepository from '../repositories/RoleRepository';
 
 class UserControllers {
