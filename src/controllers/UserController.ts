@@ -1,3 +1,4 @@
+import * as dotenv from 'dotenv';
 import { Request, Response } from 'express';
 import { getCustomRepository } from 'typeorm';
 import Bcrypt from '../helpers/bcrypt';
@@ -6,11 +7,13 @@ import UserValidator from '../Validator/UserValidator';
 import { userIntercafe } from '../helpers/interfaces';
 import { generateJwt } from '../helpers/jwt';
 import RolesRepository from '../repositories/RoleRepository';
+import Role from '../models/Role';
 
+dotenv.config();
 class UserControllers {
   async create(request: Request, response: Response) {
-    const { name, username, password, roles } = request.body;
-
+    const { name, username, password, roles, secret } = request.body;
+    const secretENV = process.env.SECRET;
     const userRepository = getCustomRepository(UserRepository);
     const roleRepository = getCustomRepository(RolesRepository);
 
@@ -25,30 +28,68 @@ class UserControllers {
       });
     }
 
-    const passwordHashed = await Bcrypt.hashed(password);
+    const [existsRoles]: any = await roleRepository.findByIds(roles);
 
-    const existsRoles = await roleRepository.findByIds(roles);
+    switch (existsRoles.name) {
+      case 'ROLE_ADM': {
+        if (secret === secretENV) {
+          const passwordHashed = await Bcrypt.hashed(password);
 
-    const user: userIntercafe = userRepository.create({
-      name,
-      username,
-      password: passwordHashed,
-      roles: existsRoles,
-    });
+          const user: userIntercafe = userRepository.create({
+            name,
+            username,
+            password: passwordHashed,
+            roles: existsRoles,
+          });
 
-    const { id } = await userRepository.save(user);
+          const { id } = await userRepository.save(user);
 
-    const jwt = generateJwt({ id, roles, expiresIN: 'id' });
+          const jwt = generateJwt({ id, roles, expiresIN: 'id' });
 
-    console.log(user);
+          delete user.password;
 
-    delete user.password;
+          return response.status(201).json({
+            data: {
+              name: user.name,
+              username: user.username,
+              roles: user.roles,
+            },
+            metadata: { token: jwt },
+            message: 'create success',
+          });
+        } else {
+          const role = existsRoles.name;
+          return response.status(400).json({
+            data: { username, name },
+            meta: {},
+            message: 'params invalid',
+            status: 400,
+          });
+        }
+      }
+      default: {
+        const passwordHashed = await Bcrypt.hashed(password);
 
-    return response.status(201).json({
-      data: { name: user.name, username: user.username, roles: user.roles },
-      metadata: { token: jwt },
-      message: 'create success',
-    });
+        const user: userIntercafe = userRepository.create({
+          name,
+          username,
+          password: passwordHashed,
+          roles: existsRoles,
+        });
+
+        const { id } = await userRepository.save(user);
+
+        const jwt = generateJwt({ id, roles, expiresIN: 'id' });
+
+        delete user.password;
+
+        return response.status(201).json({
+          data: { name: user.name, username: user.username, roles: user.roles },
+          metadata: { token: jwt },
+          message: 'create success',
+        });
+      }
+    }
   }
 
   async delete(request: Request, response: Response) {
