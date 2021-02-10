@@ -16,7 +16,9 @@ class sessionController {
     );
 
     if (!user) {
-      return response.status(400).json({ error: 'User not found' });
+      return response
+        .status(400)
+        .json({ status: 400, error: 'User not found' });
     }
 
     const matchPassword = Bcrypt.compared(password, user.password);
@@ -24,7 +26,7 @@ class sessionController {
     if (!matchPassword) {
       return response
         .status(400)
-        .json({ error: ' Incorrect password or username  ' });
+        .json({ status: 400, error: ' Incorrect password or username  ' });
     }
 
     const roles = user.roles.map((user) => user.name);
@@ -35,10 +37,11 @@ class sessionController {
       expiresIN: 'id',
     });
 
-    return response.status(400).json({
+    return response.status(200).json({
       data: { username },
       metadata: { token: jwt },
       message: 'success login',
+      status: 200,
     });
   }
 }
