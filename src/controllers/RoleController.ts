@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
+import { decode } from 'jsonwebtoken';
 import { getCustomRepository } from 'typeorm';
+import User from '../models/User';
 import PermissionRepository from '../repositories/PermissionRepository';
 import RolesRepository from '../repositories/RoleRepository';
 import RoleRepository from '../repositories/RoleRepository';
+import UserRepository from '../repositories/UserRepository';
 class RoleController {
   async create(request: Request, response: Response) {
     const roleRepository = getCustomRepository(RoleRepository);
@@ -121,6 +124,35 @@ class RoleController {
       metadata: {},
       message: 'Product update success',
     });
+  }
+  async verify(request: Request, response: Response) {
+    const authHeader = request.headers.authorization || '';
+
+    const userRepository = getCustomRepository(UserRepository);
+
+    const [, token] = authHeader?.split(' ');
+
+    try {
+      if (!token) {
+        return response.status(400).json({ error: 'Not authorized' });
+      }
+
+      const payload = decode(token);
+
+      if (!payload) {
+        return response.status(400).json({ error: 'Not authorized' });
+      }
+
+      const user: User | any = userRepository.findOne(payload?.sup, {
+        relations: ['roles'],
+      });
+
+      const roles = user?.roles.map((r: any) => r.name);
+
+      return response.json(roles);
+    } catch (error) {
+      return response.status(400).json({ error: 'Not authorized roles error' });
+    }
   }
 }
 
