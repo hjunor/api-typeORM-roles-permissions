@@ -12,7 +12,7 @@ import Role from '../models/Role';
 dotenv.config();
 class UserControllers {
   async create(request: Request, response: Response) {
-    const { name, username, password, roles, secret } = request.body;
+    const { name, username, password, role, secret } = request.body;
     const secretENV = process.env.SECRET;
     const userRepository = getCustomRepository(UserRepository);
     const roleRepository = getCustomRepository(RolesRepository);
@@ -28,7 +28,16 @@ class UserControllers {
       });
     }
 
-    const [existsRoles]: any = await roleRepository.findByIds(roles);
+    const [existsRoles]: any = await roleRepository.findByIds(role);
+
+    if (!existsRoles) {
+      return response.status(400).json({
+        data: { username, name },
+        meta: {},
+        message: 'roles invalid',
+        status: 400,
+      });
+    }
 
     switch (existsRoles.name) {
       case 'ROLE_ADM': {
@@ -44,7 +53,7 @@ class UserControllers {
 
           const { id } = await userRepository.save(user);
 
-          const jwt = generateJwt({ id, roles, expiresIN: 'id' });
+          const jwt = generateJwt({ id, role, expiresIN: 'id' });
 
           delete user.password;
 
@@ -79,7 +88,7 @@ class UserControllers {
 
         const { id } = await userRepository.save(user);
 
-        const jwt = generateJwt({ id, roles, expiresIN: 'id' });
+        const jwt = generateJwt({ id, role, expiresIN: 'id' });
 
         delete user.password;
 
@@ -129,13 +138,14 @@ class UserControllers {
   async index(request: Request, response: Response) {
     const userRepository = getCustomRepository(UserRepository);
 
-    const users = await userRepository.find();
+    const users = await userRepository.find({ relations: ['roles'] });
 
     const userList = users.map((user) => {
       return {
         id: user.id,
         username: user.username,
         name: user.name,
+        role: user.roles,
       };
     });
 
