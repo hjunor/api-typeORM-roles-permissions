@@ -7,10 +7,11 @@ import {
   JoinTable,
 } from 'typeorm';
 import Role from './Role';
+import { v4 as uuid } from 'uuid';
 
 @Entity('users')
 class User {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn()
   id: string;
 
   @Column()
@@ -32,6 +33,12 @@ class User {
     inverseJoinColumns: [{ name: 'role_id' }],
   })
   roles: Role[];
+
+  constructor() {
+    if (!this.id) {
+      this.id = uuid();
+    }
+  }
 }
 
 export default User;
