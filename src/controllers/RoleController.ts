@@ -74,11 +74,13 @@ class RoleController {
     });
   }
   async show(request: Request, response: Response) {
-    const { id } = request.params;
+    const { id } = request;
 
-    const roleRepository = getCustomRepository(RolesRepository);
+    const userRepository = getCustomRepository(UserRepository);
 
-    const role = await roleRepository.findOne(id);
+    const res: any = await userRepository.findOne(id, { relations: ['roles'] });
+
+    const role = res.data.roles.name;
 
     if (!role) {
       return response.status(400).json({
@@ -131,25 +133,28 @@ class RoleController {
     const userRepository = getCustomRepository(UserRepository);
 
     const [, token] = authHeader?.split(' ');
-
+    console.log(token);
     try {
       if (!token) {
         return response.status(400).json({ error: 'Not authorized' });
       }
 
-      const payload = decode(token);
+      const payload: any = decode(token);
 
       if (!payload) {
         return response.status(400).json({ error: 'Not authorized' });
       }
 
-      const user: User | any = userRepository.findOne(payload?.sup, {
+      const id = payload.id;
+      console.log(id);
+
+      const user: User | any = await userRepository.findOne(id, {
         relations: ['roles'],
       });
 
-      const roles = user?.roles.map((r: any) => r.name);
+      const role = user?.roles.map((r: any) => r.name);
 
-      return response.json(roles);
+      return response.json(role);
     } catch (error) {
       return response.status(400).json({ error: 'Not authorized roles error' });
     }
