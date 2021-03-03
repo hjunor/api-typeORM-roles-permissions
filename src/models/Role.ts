@@ -7,10 +7,11 @@ import {
   JoinTable,
 } from 'typeorm';
 import Permission from './Permission';
+import { v4 as uuid } from 'uuid';
 
 @Entity('roles')
 class Role {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn()
   id: string;
 
   @Column()
@@ -29,6 +30,12 @@ class Role {
     inverseJoinColumns: [{ name: 'permission_id' }],
   })
   permission: Permission[];
+
+  constructor() {
+    if (!this.id) {
+      this.id = uuid();
+    }
+  }
 }
 
 export default Role;
